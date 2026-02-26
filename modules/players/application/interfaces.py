@@ -1,0 +1,6 @@
+from typing import Protocol
+from ..domain.entities import Player
+
+class PlayerRepository(Protocol):
+    def save(self, player: Player) -> None: ...
+    def get_by_id(self, player_id: str) -> Player | None: ...
