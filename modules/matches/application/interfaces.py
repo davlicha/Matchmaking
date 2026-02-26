@@ -1,0 +1,6 @@
+from typing import Protocol
+from ..domain.entities import Match
+
+class MatchRepository(Protocol):
+    def save(self, match: Match) -> None: ...
+    def get_by_id(self, match_id: str) -> Match | None: ...
