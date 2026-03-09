@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
+from core.config import settings
 from ..application.dto import JoinQueueDTO, TicketResponseDTO, MatchResultDTO
 from ..application.service import MatchmakingService
 from ..infrastructure.repositories import InMemoryTicketRepository
 
 from ...players.api.router import service as player_service_instance
 
-router = APIRouter(prefix="/matchmaking", tags=["Matchmaking"])
+router = APIRouter(prefix=f"{settings.api_v1_str}/matchmaking", tags=["Matchmaking"])
 
 repo = InMemoryTicketRepository()
 service = MatchmakingService(
@@ -18,10 +19,7 @@ def get_matchmaking_service():
 
 @router.post("/join", response_model=TicketResponseDTO)
 def join_queue(dto: JoinQueueDTO, svc: MatchmakingService = Depends(get_matchmaking_service)):
-    try:
         return svc.join_queue(dto)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
 
 @router.post("/process", response_model=MatchResultDTO)
 def process_queue(svc: MatchmakingService = Depends(get_matchmaking_service)):

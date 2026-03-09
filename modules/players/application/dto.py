@@ -1,7 +1,7 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class CreatePlayerDTO(BaseModel):
-    username: str
+    username: str = Field(..., min_length=3, max_length=20, description="Унікальне ім'я гравця (від 3 до 20 символів)")
 
 class PlayerResponseDTO(BaseModel):
     id: str

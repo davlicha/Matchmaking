@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
+from core.config import settings
 from ..application.dto import CreatePlayerDTO, PlayerResponseDTO
 from ..application.service import PlayerService
 from ..infrastructure.repositories import InMemoryPlayerRepository
 
-router = APIRouter(prefix="/players", tags=["Players"])
+router = APIRouter(prefix=f"{settings.api_v1_str}/players", tags=["Players"])
 
 repo = InMemoryPlayerRepository()
 service = PlayerService(repository=repo)

@@ -1,4 +1,3 @@
-from modules.players.application.dto import PlayerResponseDTO
 from .interfaces import PlayerRepository
 from .dto import CreatePlayerDTO, PlayerResponseDTO
 from ..domain.entities import Player
