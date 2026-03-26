@@ -7,3 +7,6 @@ class PlayerResponseDTO(BaseModel):
     id: str
     username: str
     mmr: int
+
+class UpdateMmrDTO(BaseModel):
+    new_mmr: int = Field(..., description="Нове значення рейтингу гравця після матчу")
