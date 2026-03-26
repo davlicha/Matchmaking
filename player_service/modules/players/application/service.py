@@ -1,6 +1,7 @@
-from .interfaces import PlayerRepository
 from .dto import CreatePlayerDTO, PlayerResponseDTO
+from .interfaces import PlayerRepository
 from ..domain.entities import Player
+
 
 class PlayerService:
     def __init__(self, repository: PlayerRepository):
@@ -23,3 +24,15 @@ class PlayerService:
             raise ValueError("Гравця з таким ID не знайдено")
         player.mmr = new_mmr
         self._repository.save(player)
+
+    def process_match_result(self, winner_id: str, loser_id: str) -> None:
+        winner = self._repository.get_by_id(winner_id)
+        loser = self._repository.get_by_id(loser_id)
+
+        if winner and loser:
+            # Логіка зміни MMR
+            winner.mmr += 25
+            loser.mmr = max(0, loser.mmr - 25)
+            self._repository.save(winner)
+            self._repository.save(loser)
+            print(f"[Player Service] MMR оновлено! Переможець: {winner.mmr}, Переможений: {loser.mmr}")
