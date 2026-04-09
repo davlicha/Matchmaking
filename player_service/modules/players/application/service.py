@@ -10,13 +10,13 @@ class PlayerService:
     def register_player(self, dto: CreatePlayerDTO) -> PlayerResponseDTO:
         player = Player.create(username=dto.username)
         self._repository.save(player)
-        return PlayerResponseDTO(id=player.id, username=player.username, mmr=player.mmr)
+        return PlayerResponseDTO(id=player.id, username=player.username, mmr=player.mmr, tokens=player.tokens)
 
     def get_player(self, player_id: str) -> PlayerResponseDTO | None:
         player = self._repository.get_by_id(player_id)
         if not player:
             return None
-        return PlayerResponseDTO(id=player.id, username=player.username, mmr=player.mmr)
+        return PlayerResponseDTO(id=player.id, username=player.username, mmr=player.mmr, tokens=player.tokens)
 
     def update_mmr(self, player_id: str, new_mmr: int) -> None:
         player = self._repository.get_by_id(player_id)
@@ -30,7 +30,6 @@ class PlayerService:
         loser = self._repository.get_by_id(loser_id)
 
         if winner and loser:
-            # Логіка зміни MMR
             winner.mmr += 25
             loser.mmr = max(0, loser.mmr - 25)
             self._repository.save(winner)

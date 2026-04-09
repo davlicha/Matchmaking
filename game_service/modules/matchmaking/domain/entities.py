@@ -8,6 +8,7 @@ class Ticket:
     player_id: str
     player_mmr: int
     created_at: datetime
+    status: str = "PENDING"
 
     @classmethod
     def create(cls, player_id: str, player_mmr: int) -> "Ticket":
@@ -15,5 +16,6 @@ class Ticket:
             id=str(uuid.uuid4()),
             player_id=player_id,
             player_mmr=player_mmr,
-            created_at=datetime.now(UTC)
+            created_at=datetime.now(UTC),
+            status="PENDING"
         )

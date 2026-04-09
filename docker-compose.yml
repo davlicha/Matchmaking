@@ -1,4 +1,7 @@
+version: "3.8"
+
 services:
+  # 1. Наш брокер повідомлень
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq_broker
@@ -8,3 +11,34 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+    # Перевірка здоров'я, щоб сервіси не підключались, поки брокер не готовий
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Мікросервіс Гравців
+  player_service:
+    build:
+      context: ./player_service # Вказуємо папку з Dockerfile
+    container_name: player_service_app
+    ports:
+      - "8001:8001"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy # Запускати тільки після старту RabbitMQ
+
+  # 3. Мікросервіс Матчмейкінгу
+  game_service:
+    build:
+      context: ./game_service
+    container_name: game_service_app
+    ports:
+      - "8002:8002"
+    environment:
+      # ПЕРЕЗАПИСУЄМО змінну з .env, щоб запити йшли на ім'я контейнера 'player_service'
+      - PLAYER_SERVICE_URL=http://player_service:8001/api/v1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy

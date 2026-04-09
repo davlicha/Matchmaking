@@ -13,6 +13,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from core.config import settings
 from modules.players.api.router import get_player_service
 from modules.players.api.router import router as players_router
+from modules.players.api.router import repo
 
 
 async def consume_match_events():
@@ -22,6 +23,7 @@ async def consume_match_events():
             async with connection:
                 channel = await connection.channel()
                 exchange = await channel.declare_exchange("match_events", aio_pika.ExchangeType.FANOUT)
+                player_exchange = await channel.declare_exchange("player_events", aio_pika.ExchangeType.FANOUT)
                 queue = await channel.declare_queue("player_service_queue", durable=True)
                 await queue.bind(exchange)
 
@@ -29,7 +31,24 @@ async def consume_match_events():
                 async with queue.iterator() as queue_iter:
                     async for message in queue_iter:
                         async with message.process():
-                            payload = json.loads(message.body.decode())
+                            if message.type == "TICKET_CREATED":
+                                payload = json.loads(message.body.decode())
+                                player = repo.get_by_id(payload["player_id"])
+
+                                response_payload = {"ticket_id": payload["ticket_id"]}
+
+                                if player and player.tokens >= 10:
+                                    player.tokens -= 10
+                                    repo.save(player)
+                                    print(f"[SAGA] Успіх. Знято токени. Залишок: {player.tokens}")
+                                    status = "PAYMENT_SUCCESS"
+                                else:
+                                    print(f"[SAGA] Помилка. Недостатньо токенів у {payload['player_id']}")
+                                    status = "PAYMENT_FAILED"
+
+                                msg = aio_pika.Message(body=json.dumps(response_payload).encode(), type=status)
+                                await player_exchange.publish(msg, routing_key="")
+
                             winner_id = payload.get("winner_id")
                             loser_id = payload.get("loser_id")
                             print(f"[Consumer] Отримано результат матчу: W: {winner_id}, L: {loser_id}")

@@ -34,7 +34,7 @@ class Match:
 class OutboxEvent:
     id: str
     event_type: str
-    payload: str  # JSON рядок
+    payload: str
     processed: bool = False
     created_at: datetime = None
 

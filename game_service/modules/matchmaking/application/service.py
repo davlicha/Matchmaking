@@ -1,9 +1,15 @@
+import json
+
 from .interfaces import TicketRepository
 from .dto import JoinQueueDTO, TicketResponseDTO, MatchResultDTO
 from ..domain.entities import Ticket
 from ..domain.services import Matchmaker
 from core.http_client import PlayerServiceClient
+from modules.matches.infrastructure.repositories import outbox_repo
 import circuitbreaker
+
+from ...matches.domain.entities import OutboxEvent
+
 
 class MatchmakingService:
     def __init__(self, ticket_repo: TicketRepository, player_client: PlayerServiceClient):
@@ -12,7 +18,6 @@ class MatchmakingService:
 
     async def join_queue(self, dto: JoinQueueDTO, correlation_id: str) -> TicketResponseDTO:
         try:
-            # Отримуємо дані гравця через HTTP-клієнт
             player_data = await self._player_client.get_player(dto.player_id, correlation_id)
         except circuitbreaker.CircuitBreakerError:
             raise ValueError("Сервіс гравців перевантажений (Circuit Breaker). Спробуйте через 10 секунд.")
@@ -22,9 +27,12 @@ class MatchmakingService:
         if not player_data:
             raise ValueError(f"Гравця з ID {dto.player_id} не знайдено")
 
-        # player_data тепер це словник, тому звертаємось через ключі ["id"] та ["mmr"]
         ticket = Ticket.create(player_id=player_data["id"], player_mmr=player_data["mmr"])
         self._ticket_repo.add(ticket)
+
+        payload = json.dumps({"ticket_id": ticket.id, "player_id": ticket.player_id})
+        event = OutboxEvent.create(event_type="TICKET_CREATED", payload=payload)
+        outbox_repo.save(event)
 
         return TicketResponseDTO(ticket_id=ticket.id, player_id=ticket.player_id, status="In Queue")
 
